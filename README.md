@@ -51,6 +51,13 @@ Then configure in `package.json` of your profile:
 }
 ```
 
+### Uninstallation
+
+```bash
+dsh plugin --profile web remove dsh-plugin-skill-palette
+```
+If configured locally, simply remove `dsh-plugin-skill-palette` from `dependencies` and `bundles` in your profile's `package.json`.
+
 ---
 
 ## 🖥️ Features

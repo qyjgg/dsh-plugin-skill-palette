@@ -52,6 +52,13 @@ dsh plugin --profile web add dsh-plugin-skill-palette
    }
    ```
 
+### 卸载插件
+
+```bash
+dsh plugin --profile web remove dsh-plugin-skill-palette
+```
+若使用本地引用，直接从 profile 配置文件的 `dependencies` 与 `bundles` 中删除 `dsh-plugin-skill-palette` 即可。
+
 ---
 
 ## 🖥️ 功能特性
