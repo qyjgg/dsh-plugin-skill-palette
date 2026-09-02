@@ -1,0 +1,5 @@
+# dsh-plugin-skill-palette bundle patch
+- insert:
+    - id: skill-palette
+      name: 'dsh-plugin-skill-palette'
+      disabled: !!js "[...ctx.loader.entries()].some((e) => e.options.name === 'dsh-plugin-skill-palette' && e.options.id !== 'skill-palette' && !e.disabled)"

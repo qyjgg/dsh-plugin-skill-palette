@@ -1,0 +1,73 @@
+{
+  "name": "dsh-plugin-skill-palette",
+  "version": "1.0.0",
+  "description": "Enhanced skill plugin for DeepSeek Harness (DSH): Fuzzy slash search, interactive multi-skill palette & preset bundles",
+  "author": "qyjgg",
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/qyjgg/dsh-plugin-skill-palette.git"
+  },
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./client": {
+      "default": "./lib/client.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "inject": [
+        "@deepseek-ai/dsh-client-runtime",
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-tool",
+        "@deepseek-ai/dsh-client-ui-input-trigger",
+        "@deepseek-ai/dsh-api-remotes"
+      ],
+      "platform": "web"
+    }
+  },
+  "scripts": {
+    "build": "tsdown",
+    "watch": "tsdown --watch"
+  },
+  "keywords": [
+    "dsh",
+    "deepseek-harness",
+    "dsh-plugin",
+    "awesome-dsh-plugin",
+    "skills",
+    "slash-command",
+    "fuzzy-search",
+    "multi-select",
+    "palette"
+  ],
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "tsdown": "^0.22.2",
+    "typescript": "^5.6.0"
+  }
+}
