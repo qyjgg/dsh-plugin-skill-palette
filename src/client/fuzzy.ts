@@ -22,40 +22,54 @@ export interface MatchResult<T> {
  * Tier 3 (200+): Keyword / word-boundary match in description (e.g. 'test' -> 'tdd')
  * Tier 4 (100+): Subsequence fuzzy match in description
  */
-export function fuzzyMatchSkill<T extends { name: string; description: string }>(
+export function fuzzyMatchSkill<T extends { name?: string; description?: string }>(
   item: T,
   rawQuery: string
 ): MatchResult<T> | null {
   const query = rawQuery.trim().toLowerCase();
+  const nameLower = (item?.name ?? "").toLowerCase();
+  const descLower = (item?.description ?? "").toLowerCase();
+
   if (!query) {
     return { item, score: 0, nameHighlights: [], descHighlights: [] };
   }
+  if (!nameLower && !descLower) {
+    return null;
+  }
 
-  const nameLower = item.name.toLowerCase();
-  const descLower = item.description.toLowerCase();
-
-  // Tier 1: Name prefix exact match
+  // Tier 1: Name prefix exact match (e.g. 'code' -> 'code-review')
   if (nameLower.startsWith(query)) {
     return {
       item,
-      score: 1000 + (100 - nameLower.length),
+      score: 1000 + Math.max(0, 100 - nameLower.length),
       nameHighlights: [{ start: 0, end: query.length }],
       descHighlights: [],
     };
   }
 
-  // Tier 1.5: Name substring match
+  // Tier 1.8: Acronym / Word initials match (e.g. 'cc' -> 'caveman-commit', 'sd' -> 'systematic-debugging')
+  const acronymResult = matchAcronym(nameLower, query);
+  if (acronymResult) {
+    return {
+      item,
+      score: acronymResult.score,
+      nameHighlights: acronymResult.highlights,
+      descHighlights: [],
+    };
+  }
+
+  // Tier 1.5: Name substring match (e.g. 'review' -> 'code-review')
   const subIdx = nameLower.indexOf(query);
   if (subIdx !== -1) {
     return {
       item,
-      score: 800 + (100 - subIdx),
+      score: 800 + Math.max(0, 100 - subIdx),
       nameHighlights: [{ start: subIdx, end: subIdx + query.length }],
       descHighlights: [],
     };
   }
 
-  // Tier 2: Subsequence & boundary match on name
+  // Tier 2: Subsequence & boundary match on name (e.g. 'cdrv' -> 'code-review')
   const nameSubseq = matchSubsequence(nameLower, query);
   if (nameSubseq) {
     return {
@@ -66,12 +80,12 @@ export function fuzzyMatchSkill<T extends { name: string; description: string }>
     };
   }
 
-  // Tier 3: Description keyword substring match
+  // Tier 3: Description keyword substring match (e.g. 'test' -> 'tdd')
   const descSubIdx = descLower.indexOf(query);
   if (descSubIdx !== -1) {
     return {
       item,
-      score: 200 + (50 - Math.min(descSubIdx, 50)),
+      score: 200 + Math.max(0, 50 - Math.min(descSubIdx, 50)),
       nameHighlights: [],
       descHighlights: [{ start: descSubIdx, end: descSubIdx + query.length }],
     };
@@ -85,6 +99,53 @@ export function fuzzyMatchSkill<T extends { name: string; description: string }>
       score: 100 + descSubseq.score,
       nameHighlights: [],
       descHighlights: descSubseq.highlights,
+    };
+  }
+
+  return null;
+}
+
+/**
+ * Match acronym / word initial letters.
+ * e.g. 'caveman-commit' -> initials 'c', 'c'. Query 'cc' exact match.
+ */
+function matchAcronym(
+  target: string,
+  query: string
+): { score: number; highlights: HighlightSpan[] } | null {
+  if (!query || query.length < 2) return null;
+
+  const initials: { char: string; index: number }[] = [];
+  for (let i = 0; i < target.length; i++) {
+    const isBoundary =
+      i === 0 ||
+      target[i - 1] === "-" ||
+      target[i - 1] === "_" ||
+      target[i - 1] === " " ||
+      target[i - 1] === "/";
+    if (isBoundary && target[i] >= "a" && target[i] <= "z") {
+      initials.push({ char: target[i], index: i });
+    }
+  }
+
+  if (initials.length < query.length) return null;
+
+  const acronymStr = initials.map((it) => it.char).join("");
+
+  // Exact acronym match (e.g. 'cc' for 'caveman-commit')
+  if (acronymStr === query) {
+    return {
+      score: 950 + Math.max(0, 20 - target.length),
+      highlights: initials.map((it) => ({ start: it.index, end: it.index + 1 })),
+    };
+  }
+
+  // Prefix acronym match (e.g. 'cr' for 'code-review-expert')
+  if (acronymStr.startsWith(query)) {
+    const matchedInitials = initials.slice(0, query.length);
+    return {
+      score: 900 + Math.max(0, 20 - target.length),
+      highlights: matchedInitials.map((it) => ({ start: it.index, end: it.index + 1 })),
     };
   }
 

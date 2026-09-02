@@ -38,7 +38,8 @@
   },
   "scripts": {
     "build": "tsdown",
-    "watch": "tsdown --watch"
+    "watch": "tsdown --watch",
+    "test": "node --experimental-strip-types --test test/fuzzy.test.ts"
   },
   "keywords": [
     "dsh",

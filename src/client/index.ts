@@ -75,7 +75,9 @@ export function apply(ctx: any) {
     return promise;
   };
 
-  const invalidate = (key: string) => {
+  const invalidate = (arg: string | { sessionId?: string } | undefined) => {
+    const key = typeof arg === "string" ? arg : arg?.sessionId;
+    if (!key) return;
     const entry = fetches.get(key);
     if (entry === undefined) return;
     fetches.delete(key);
@@ -95,8 +97,26 @@ export function apply(ctx: any) {
       const skills = await fetchCatalog(session.sessionId);
       if (signal.aborted) return [];
 
+      const currentText =
+        typeof session?.draft?.text === "string"
+          ? session.draft.text
+          : typeof session?.text === "string"
+          ? session.text
+          : "";
+      const pickedSkillNames = new Set(
+        Array.from(currentText.matchAll(/\/([a-zA-Z0-9_-]+)/g)).map((m: any) => m[1])
+      );
+
       const matched = skills
-        .map((skill) => fuzzyMatchSkill(skill, query))
+        .map((skill) => {
+          const res = fuzzyMatchSkill(skill, query);
+          if (!res) return null;
+          const isAlreadyPicked = pickedSkillNames.has(skill.name);
+          return {
+            ...res,
+            score: isAlreadyPicked ? res.score - 500 : res.score,
+          };
+        })
         .filter((item): item is NonNullable<typeof item> => item !== null)
         .sort((a, b) => b.score - a.score);
 
@@ -129,13 +149,15 @@ export function apply(ctx: any) {
     },
   };
 
-  ctx.remote?.$on?.("agent-preset/selected", invalidate);
-  ctx.on?.("connection/reset", clearAll);
-
   ctx.effect(() => {
-    const unregister = inputTriggers.registerSource(source);
+    const offPreset = ctx.remote?.$on?.("agent-preset/selected", invalidate);
+    const offReset = ctx.on?.("connection/reset", clearAll);
+    const unregisterSource = inputTriggers.registerSource(source);
+
     return () => {
-      unregister?.();
+      if (typeof offPreset === "function") offPreset();
+      if (typeof offReset === "function") offReset();
+      unregisterSource?.();
       clearAll();
     };
   }, "ui-skill-enhanced: source");
