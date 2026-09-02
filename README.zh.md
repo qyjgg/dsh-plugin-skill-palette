@@ -20,13 +20,13 @@
 
 ## 📦 安装与配置
 
-### 方式 1：通过 DSH 插件命令安装（推荐）
+### 方式 1：通过 GitHub 仓库安装（推荐）
 
 ```bash
-dsh plugin --profile web add dsh-plugin-skill-palette
+dsh plugin --profile web add github:qyjgg/dsh-plugin-skill-palette
 ```
 
-### 方式 2：本地源码加载
+### 方式 2：本地源码加载开发
 
 1. 编译插件：
    ```bash
@@ -39,7 +39,7 @@ dsh plugin --profile web add dsh-plugin-skill-palette
    ```json
    {
      "dependencies": {
-       "dsh-plugin-skill-palette": "file:E:/work/dsh-plugin-skill-palette"
+       "dsh-plugin-skill-palette": "link:E:/work/dsh-plugin-skill-palette"
      },
      "dsh": {
        "profile": {

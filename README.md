@@ -20,36 +20,37 @@ English | [简体中文](README.zh.md)
 
 ## 📦 Installation & Setup
 
-### Option 1: Install via DSH CLI (Recommended)
+### Option 1: Install via GitHub Repository (Recommended)
 
 ```bash
-dsh plugin --profile web add dsh-plugin-skill-palette
+dsh plugin --profile web add github:qyjgg/dsh-plugin-skill-palette
 ```
 
 ### Option 2: Local Development & Build
 
-```bash
-cd dsh-plugin-skill-palette
-npm install
-npm run build
-```
+1. Build the plugin:
+   ```bash
+   cd dsh-plugin-skill-palette
+   npm install
+   npm run build
+   ```
 
-Then configure in `package.json` of your profile:
-```json
-{
-  "dependencies": {
-    "dsh-plugin-skill-palette": "file:E:/work/dsh-plugin-skill-palette"
-  },
-  "dsh": {
-    "profile": {
-      "bundles": [
-        "...",
-        "dsh-plugin-skill-palette"
-      ]
-    }
-  }
-}
-```
+2. Then configure in `package.json` of your profile (`C:\Users\<user>\.dsh\profiles\web\package.json`):
+   ```json
+   {
+     "dependencies": {
+       "dsh-plugin-skill-palette": "link:E:/work/dsh-plugin-skill-palette"
+     },
+     "dsh": {
+       "profile": {
+         "bundles": [
+           "...",
+           "dsh-plugin-skill-palette"
+         ]
+       }
+     }
+   }
+   ```
 
 ### Uninstallation
 
