@@ -29,6 +29,11 @@ test("fuzzyMatchSkill - acronym match (Tier 1.8)", () => {
   const res3 = fuzzyMatchSkill(item3, "cr");
   assert.ok(res3 !== null);
   assert.ok(res3.score >= 900, `Expected prefix acronym score >= 900, got ${res3.score}`);
+
+  const item4 = { name: "web3-auth-service", description: "Web3 Auth" };
+  const res4 = fuzzyMatchSkill(item4, "was");
+  assert.ok(res4 !== null);
+  assert.ok(res4.score >= 950, `Expected exact acronym score >= 950, got ${res4.score}`);
 });
 
 test("fuzzyMatchSkill - substring match (Tier 1.5)", () => {

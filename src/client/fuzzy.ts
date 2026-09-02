@@ -123,8 +123,9 @@ function matchAcronym(
       target[i - 1] === "_" ||
       target[i - 1] === " " ||
       target[i - 1] === "/";
-    if (isBoundary && target[i] >= "a" && target[i] <= "z") {
-      initials.push({ char: target[i], index: i });
+    const c = target[i];
+    if (isBoundary && ((c >= "a" && c <= "z") || (c >= "0" && c <= "9"))) {
+      initials.push({ char: c, index: i });
     }
   }
 
