@@ -26,22 +26,23 @@ export function fuzzyMatchSkill<T extends { name?: string; description?: string 
   item: T,
   rawQuery: string
 ): MatchResult<T> | null {
-  const query = rawQuery.trim().toLowerCase();
+  const query = (rawQuery ?? "").trim().toLowerCase();
   const nameLower = (item?.name ?? "").toLowerCase();
   const descLower = (item?.description ?? "").toLowerCase();
 
-  if (!query) {
-    return { item, score: 0, nameHighlights: [], descHighlights: [] };
-  }
   if (!nameLower && !descLower) {
     return null;
+  }
+  if (!query) {
+    return { item, score: 0, nameHighlights: [], descHighlights: [] };
   }
 
   // Tier 1: Name prefix exact match (e.g. 'code' -> 'code-review')
   if (nameLower.startsWith(query)) {
+    const isExact = nameLower === query;
     return {
       item,
-      score: 1000 + Math.max(0, 100 - nameLower.length),
+      score: (isExact ? 1100 : 1000) + Math.max(0, 100 - nameLower.length),
       nameHighlights: [{ start: 0, end: query.length }],
       descHighlights: [],
     };
@@ -74,7 +75,7 @@ export function fuzzyMatchSkill<T extends { name?: string; description?: string 
   if (nameSubseq) {
     return {
       item,
-      score: 500 + nameSubseq.score,
+      score: 500 + Math.min(250, nameSubseq.score),
       nameHighlights: nameSubseq.highlights,
       descHighlights: [],
     };
@@ -96,7 +97,7 @@ export function fuzzyMatchSkill<T extends { name?: string; description?: string 
   if (descSubseq) {
     return {
       item,
-      score: 100 + descSubseq.score,
+      score: 100 + Math.min(90, descSubseq.score),
       nameHighlights: [],
       descHighlights: descSubseq.highlights,
     };
@@ -172,12 +173,13 @@ function matchSubsequence(
     const qChar = query[qIdx];
 
     if (tChar === qChar) {
-      // Word boundary bonus (start of string, after '-', '_', ' ')
+      // Word boundary bonus (start of string, after '-', '_', ' ', '/')
       const isBoundary =
         tIdx === 0 ||
         target[tIdx - 1] === '-' ||
         target[tIdx - 1] === '_' ||
-        target[tIdx - 1] === ' ';
+        target[tIdx - 1] === ' ' ||
+        target[tIdx - 1] === '/';
       if (isBoundary) score += 35;
 
       // Consecutive match bonus

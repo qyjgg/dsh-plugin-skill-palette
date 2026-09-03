@@ -94,7 +94,15 @@ export function apply(ctx: any) {
     name: "skill-enhanced",
     order: 1.5, // Priority over native skill source (order: 2)
     async candidates(session: any, { query, signal }: { query: string; signal: AbortSignal }) {
-      const skills = await fetchCatalog(session.sessionId);
+      const sessionId = session?.sessionId;
+      if (!sessionId) return [];
+
+      let skills: SkillDescriptor[];
+      try {
+        skills = await fetchCatalog(sessionId);
+      } catch {
+        return [];
+      }
       if (signal.aborted) return [];
 
       const currentText =
@@ -104,7 +112,7 @@ export function apply(ctx: any) {
           ? session.text
           : "";
       const pickedSkillNames = new Set(
-        Array.from(currentText.matchAll(/\/([a-zA-Z0-9_-]+)/g)).map((m: any) => m[1])
+        Array.from(currentText.matchAll(/\/([a-zA-Z0-9_-]+)\s+/g)).map((m: any) => m[1])
       );
 
       const matched = skills
@@ -120,21 +128,28 @@ export function apply(ctx: any) {
         .filter((item): item is NonNullable<typeof item> => item !== null)
         .sort((a, b) => b.score - a.score);
 
+      const sectionTitle = t("menu.section");
       return matched.map(({ item }) => ({
         name: item.name,
+        section: sectionTitle,
         description: item.modelInvocable
           ? item.description
           : `${t("menu.userOnly")} · ${item.description}`,
       }));
     },
     warm(session: any) {
-      fetchCatalog(session.sessionId).catch(() => {});
+      const sessionId = session?.sessionId;
+      if (sessionId) {
+        fetchCatalog(sessionId).catch(() => {});
+      }
     },
     lexicon(session: any) {
-      return fetches.get(session.sessionId)?.settled?.map((s) => s.name);
+      const sessionId = session?.sessionId;
+      return sessionId ? fetches.get(sessionId)?.settled?.map((s) => s.name) : undefined;
     },
     subscribeLexicon(session: any, listener: () => void) {
-      const key = session.sessionId;
+      const key = session?.sessionId;
+      if (!key) return () => {};
       const listeners = lexiconListeners.get(key) ?? new Set();
       listeners.add(listener);
       lexiconListeners.set(key, listeners);

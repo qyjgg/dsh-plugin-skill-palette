@@ -11,9 +11,6 @@ export default defineConfig([
     fixedExtension: false,
     dts: true,
     clean: false,
-    outputOptions: {
-      entryFileNames: "index.js",
-    },
   },
   // 2. Client (Browser UI) entry: lib/client.js
   {

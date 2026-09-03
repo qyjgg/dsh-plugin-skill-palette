@@ -61,10 +61,88 @@ test("fuzzyMatchSkill - empty query returns all with score 0", () => {
   assert.deepEqual(res.descHighlights, []);
 });
 
+test("fuzzyMatchSkill - exact match bonus higher than prefix", () => {
+  const exact = { name: "test", description: "Run test" };
+  const prefix = { name: "testing", description: "Run testing" };
+  const resExact = fuzzyMatchSkill(exact, "test");
+  const resPrefix = fuzzyMatchSkill(prefix, "test");
+  assert.ok(resExact !== null && resPrefix !== null);
+  assert.ok(resExact.score > resPrefix.score, `Expected exact score (${resExact.score}) > prefix score (${resPrefix.score})`);
+});
+
+test("fuzzyMatchSkill - name subsequence match (Tier 2)", () => {
+  const item = { name: "code-review", description: "Review code" };
+  const res = fuzzyMatchSkill(item, "cdrv");
+  assert.ok(res !== null);
+  assert.ok(res.score >= 500 && res.score < 800, `Expected Tier 2 score in [500, 800), got ${res.score}`);
+  assert.ok(res.nameHighlights.length > 0);
+});
+
+test("fuzzyMatchSkill - boundary detection with '/'", () => {
+  const item = { name: "vendor/skill-helper", description: "Helper" };
+  // Exact acronym match across '/' boundary
+  const resExact = fuzzyMatchSkill(item, "vsh");
+  assert.ok(resExact !== null);
+  assert.ok(resExact.score >= 950, `Expected exact acronym >= 950, got ${resExact.score}`);
+
+  // Prefix acronym match across '/' boundary
+  const resPrefix = fuzzyMatchSkill(item, "vs");
+  assert.ok(resPrefix !== null);
+  assert.ok(resPrefix.score >= 900, `Expected prefix acronym >= 900, got ${resPrefix.score}`);
+
+  // Subsequence match across word boundaries
+  const resSub = fuzzyMatchSkill(item, "sh");
+  assert.ok(resSub !== null);
+  assert.ok(resSub.score >= 500, `Expected subsequence match >= 500, got ${resSub.score}`);
+});
+
+test("fuzzyMatchSkill - description subsequence match (Tier 4)", () => {
+  const item = { name: "tool", description: "automatic code refactoring engine" };
+  const res = fuzzyMatchSkill(item, "acr");
+  assert.ok(res !== null);
+  assert.ok(res.score >= 100 && res.score < 200, `Expected Tier 4 score in [100, 200), got ${res.score}`);
+  assert.ok(res.descHighlights.length > 0);
+});
+
+test("fuzzyMatchSkill - non-matching query returns null", () => {
+  const item = { name: "tdd", description: "Test-driven development" };
+  const res = fuzzyMatchSkill(item, "zzzz");
+  assert.equal(res, null);
+});
+
+test("fuzzyMatchSkill - Chinese / Unicode support", () => {
+  const item = { name: "代码审查", description: "自动检查代码规范与潜在漏洞" };
+  const resPrefix = fuzzyMatchSkill(item, "代码");
+  assert.ok(resPrefix !== null);
+  assert.ok(resPrefix.score >= 1000);
+
+  const resSubstring = fuzzyMatchSkill(item, "审查");
+  assert.ok(resSubstring !== null);
+  assert.ok(resSubstring.score >= 800);
+
+  const resDesc = fuzzyMatchSkill(item, "漏洞");
+  assert.ok(resDesc !== null);
+  assert.ok(resDesc.score >= 200);
+});
+
 test("fuzzyMatchSkill - null and undefined safety", () => {
   const badItem1 = { name: undefined as any, description: undefined as any };
   const res1 = fuzzyMatchSkill(badItem1, "test");
   assert.equal(res1, null);
+
+  // Empty/bad item with empty query should return null
+  const res1Empty = fuzzyMatchSkill(badItem1, "");
+  assert.equal(res1Empty, null);
+
+  // rawQuery null or undefined safety
+  const goodItem = { name: "code-review", description: "Review" };
+  const resNullQuery = fuzzyMatchSkill(goodItem, null as any);
+  assert.ok(resNullQuery !== null);
+  assert.equal(resNullQuery.score, 0);
+
+  const resUndefinedQuery = fuzzyMatchSkill(goodItem, undefined as any);
+  assert.ok(resUndefinedQuery !== null);
+  assert.equal(resUndefinedQuery.score, 0);
 
   const badItem2 = { name: "test", description: undefined as any };
   const res2 = fuzzyMatchSkill(badItem2, "test");
